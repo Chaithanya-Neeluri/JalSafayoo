@@ -26,20 +26,6 @@ JALSAFAYOO AI demonstrates a single-class object detection model trained with YO
 
 ---
 
-## Screenshots
-
-| Dashboard | Detection Feed |
-|-----------|----------------|
-| ![Dashboard Placeholder](static/images/screenshot-dashboard.png) | ![Detection Placeholder](static/images/screenshot-detection.png) |
-
-| Statistics Panel | Detection Log |
-|--------------------|---------------|
-| ![Stats Placeholder](static/images/screenshot-stats.png) | ![Log Placeholder](static/images/screenshot-log.png) |
-
-*Replace placeholder images in `static/images/` with actual screenshots before submission.*
-
----
-
 ## Requirements
 
 | Requirement | Version |
