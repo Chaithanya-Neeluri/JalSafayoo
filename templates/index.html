@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{ project_subtitle }}">
+    <title>{{ project_name }} — Floater Detection Dashboard</title>
+
+    <!-- Bootstrap 5 (local — no CDN required) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <!-- ================================================================
+         LOADING SCREEN
+         ================================================================ -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo">
+                <i class="bi bi-droplet-half"></i>
+            </div>
+            <h1 class="loading-title">{{ project_name }}</h1>
+            <p class="loading-subtitle">{{ project_subtitle }}</p>
+            <div class="loading-bar">
+                <div class="loading-bar-fill" id="loading-bar-fill"></div>
+            </div>
+            <p class="loading-status" id="loading-status">Initializing AI engine…</p>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         TOP NAVBAR
+         ================================================================ -->
+    <nav class="navbar-custom" id="navbar">
+        <div class="navbar-brand-group">
+            <div class="navbar-logo">
+                <i class="bi bi-droplet-half"></i>
+            </div>
+            <div class="navbar-titles">
+                <span class="navbar-project">{{ project_name }}</span>
+                <span class="navbar-subtitle">{{ project_subtitle }}</span>
+            </div>
+        </div>
+
+        <div class="navbar-center">
+            <span class="navbar-badge">
+                <i class="bi bi-circle-fill status-dot" id="connection-dot"></i>
+                <span id="connection-label">Connecting…</span>
+            </span>
+            <span class="navbar-version">v{{ project_version }}</span>
+        </div>
+
+        <div class="navbar-datetime">
+            <div class="datetime-block">
+                <i class="bi bi-calendar3"></i>
+                <span id="navbar-date">{{ current_date }}</span>
+            </div>
+            <div class="datetime-block">
+                <i class="bi bi-clock"></i>
+                <span id="navbar-time">{{ current_time }}</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ================================================================
+         MAIN DASHBOARD
+         ================================================================ -->
+    <main class="dashboard" id="dashboard">
+
+        <!-- LEFT COLUMN — Live Video -->
+        <section class="panel panel-video" id="video-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="bi bi-camera-video"></i>
+                    <span>Live Detection Feed</span>
+                </div>
+                <div class="panel-actions">
+                    <span class="live-badge" id="live-badge">
+                        <i class="bi bi-record-circle"></i> LIVE
+                    </span>
+                </div>
+            </div>
+
+            <div class="video-wrapper" id="video-container">
+                <img
+                    id="video-stream"
+                    src="{{ url_for('main.video_feed') }}"
+                    alt="Live detection feed"
+                    class="video-stream"
+                >
+                <div class="video-overlay" id="video-overlay">
+                    <div class="video-placeholder">
+                        <i class="bi bi-play-circle"></i>
+                        <p>Select an input source to begin detection</p>
+                    </div>
+                </div>
+                <div class="video-skeleton skeleton" id="video-skeleton"></div>
+            </div>
+
+            <!-- Video Controls -->
+            <div class="video-controls" id="video-controls">
+                <button class="ctrl-btn" id="btn-play" title="Play (P)" data-action="play">
+                    <i class="bi bi-play-fill"></i>
+                </button>
+                <button class="ctrl-btn" id="btn-pause" title="Pause (Space)" data-action="pause">
+                    <i class="bi bi-pause-fill"></i>
+                </button>
+                <button class="ctrl-btn" id="btn-resume" title="Resume (R)" data-action="resume">
+                    <i class="bi bi-skip-forward-fill"></i>
+                </button>
+                <button class="ctrl-btn" id="btn-restart" title="Restart" data-action="restart">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+                <button class="ctrl-btn ctrl-btn-danger" id="btn-stop" title="Stop (S)" data-action="stop">
+                    <i class="bi bi-stop-fill"></i>
+                </button>
+
+                <div class="ctrl-divider"></div>
+
+                <button class="ctrl-btn" id="btn-fullscreen" title="Fullscreen (F)" data-action="fullscreen">
+                    <i class="bi bi-arrows-fullscreen"></i>
+                </button>
+                <button class="ctrl-btn" id="btn-screenshot" title="Screenshot (C)" data-action="screenshot">
+                    <i class="bi bi-camera"></i>
+                </button>
+                <button class="ctrl-btn" id="btn-save-video" title="Save Processed Video" data-action="save-video">
+                    <i class="bi bi-save"></i>
+                </button>
+                <button class="ctrl-btn" id="btn-download-video" title="Download Processed Video (D)" data-action="download-video">
+                    <i class="bi bi-download"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- RIGHT COLUMN — Stats, Table, Log -->
+        <aside class="panel-column" id="right-column">
+
+            <!-- Statistics Cards -->
+            <section class="panel panel-stats" id="stats-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Statistics</span>
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card" id="stat-card-fps">
+                        <div class="stat-icon stat-icon-primary"><i class="bi bi-lightning-charge"></i></div>
+                        <div class="stat-body">
+                            <span class="stat-label">FPS</span>
+                            <span class="stat-value" id="stat-fps">0.0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card" id="stat-card-total">
+                        <div class="stat-icon stat-icon-secondary"><i class="bi bi-layers"></i></div>
+                        <div class="stat-body">
+                            <span class="stat-label">Total Floaters</span>
+                            <span class="stat-value" id="stat-total">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card" id="stat-card-current">
+                        <div class="stat-icon stat-icon-success"><i class="bi bi-bullseye"></i></div>
+                        <div class="stat-body">
+                            <span class="stat-label">Current Detections</span>
+                            <span class="stat-value" id="stat-current">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card" id="stat-card-model">
+                        <div class="stat-icon stat-icon-warning"><i class="bi bi-cpu"></i></div>
+                        <div class="stat-body">
+                            <span class="stat-label">Model Status</span>
+                            <span class="stat-value stat-value-sm" id="stat-model">Idle</span>
+                        </div>
+                    </div>
+                    <div class="stat-card" id="stat-card-camera">
+                        <div class="stat-icon stat-icon-primary"><i class="bi bi-webcam"></i></div>
+                        <div class="stat-body">
+                            <span class="stat-label">Camera Status</span>
+                            <span class="stat-value stat-value-sm" id="stat-camera">Disconnected</span>
+                        </div>
+                    </div>
+                    <div class="stat-card" id="stat-card-source">
+                        <div class="stat-icon stat-icon-secondary"><i class="bi bi-input-cursor"></i></div>
+                        <div class="stat-body">
+                            <span class="stat-label">Input Source</span>
+                            <span class="stat-value stat-value-sm" id="stat-source">No Source</span>
+                        </div>
+                    </div>
+                    <div class="stat-card" id="stat-card-confidence">
+                        <div class="stat-icon stat-icon-success"><i class="bi bi-sliders"></i></div>
+                        <div class="stat-body">
+                            <span class="stat-label">Confidence</span>
+                            <span class="stat-value" id="stat-confidence">0.40</span>
+                        </div>
+                    </div>
+                    <div class="stat-card" id="stat-card-inference">
+                        <div class="stat-icon stat-icon-warning"><i class="bi bi-stopwatch"></i></div>
+                        <div class="stat-body">
+                            <span class="stat-label">Inference Time</span>
+                            <span class="stat-value" id="stat-inference">0 ms</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Charts -->
+                <div class="charts-row">
+                    <div class="chart-container">
+                        <canvas id="fps-chart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="detections-chart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Detection Table -->
+            <section class="panel panel-table" id="table-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="bi bi-table"></i>
+                        <span>Detection Table</span>
+                    </div>
+                    <span class="panel-badge" id="table-count">0 active</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="detection-table" id="detection-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Center X</th>
+                                <th>Center Y</th>
+                                <th>Width</th>
+                                <th>Height</th>
+                                <th>Area</th>
+                                <th>Confidence</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detection-table-body">
+                            <tr class="empty-row">
+                                <td colspan="8">No detections yet</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Detection Log -->
+            <section class="panel panel-log" id="log-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="bi bi-journal-text"></i>
+                        <span>Detection Log</span>
+                    </div>
+                    <button class="btn-export" id="btn-export-csv" title="Export CSV">
+                        <i class="bi bi-file-earmark-spreadsheet"></i>
+                        Export CSV
+                    </button>
+                </div>
+                <div class="log-container" id="detection-log">
+                    <div class="log-empty">
+                        <i class="bi bi-inbox"></i>
+                        <p>Detection history will appear here</p>
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- BOTTOM ROW — Input Source & Settings -->
+        <section class="panel panel-bottom" id="bottom-panel">
+            <div class="bottom-grid">
+
+                <!-- Input Source -->
+                <div class="bottom-section" id="input-source-section">
+                    <div class="section-header">
+                        <i class="bi bi-collection-play"></i>
+                        <span>Input Source</span>
+                    </div>
+
+                    <ul class="nav nav-tabs source-tabs" id="source-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="tab-webcam" data-bs-toggle="tab"
+                                    data-bs-target="#panel-webcam" type="button" role="tab">
+                                <i class="bi bi-webcam"></i> IP Webcam
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="tab-demo" data-bs-toggle="tab"
+                                    data-bs-target="#panel-demo" type="button" role="tab">
+                                <i class="bi bi-film"></i> Demo Videos
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="tab-upload" data-bs-toggle="tab"
+                                    data-bs-target="#panel-upload" type="button" role="tab">
+                                <i class="bi bi-cloud-upload"></i> Upload
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content source-panels" id="source-panels">
+                        <!-- IP Webcam -->
+                        <div class="tab-pane fade show active" id="panel-webcam" role="tabpanel">
+                            <div class="source-form">
+                                <div class="input-group-custom">
+                                    <i class="bi bi-link-45deg"></i>
+                                    <input type="url" class="form-input" id="webcam-url"
+                                           placeholder="http://192.168.29.166:8080/video"
+                                           value="">
+                                </div>
+                                <button class="btn-primary-custom" id="btn-connect-webcam">
+                                    <i class="bi bi-plug"></i> Connect
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Demo Videos -->
+                        <div class="tab-pane fade" id="panel-demo" role="tabpanel">
+                            <div class="source-form">
+                                <div class="input-group-custom">
+                                    <i class="bi bi-film"></i>
+                                    <select class="form-select-custom" id="demo-video-select">
+                                        <option value="">Loading videos…</option>
+                                    </select>
+                                </div>
+                                <button class="btn-primary-custom" id="btn-play-demo">
+                                    <i class="bi bi-play-fill"></i> Play
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Upload -->
+                        <div class="tab-pane fade" id="panel-upload" role="tabpanel">
+                            <div class="source-form">
+                                <div class="upload-zone" id="upload-zone">
+                                    <input type="file" id="video-upload-input"
+                                           accept=".mp4,.avi,.mov,.mkv" hidden>
+                                    <i class="bi bi-cloud-arrow-up"></i>
+                                    <p>Drag & drop video or <span class="upload-link">browse</span></p>
+                                    <small>MP4, AVI, MOV, MKV — max 500 MB</small>
+                                </div>
+                                <div class="upload-progress hidden" id="upload-progress">
+                                    <div class="progress-bar-custom">
+                                        <div class="progress-fill" id="upload-progress-fill"></div>
+                                    </div>
+                                    <span id="upload-progress-text">Uploading…</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div class="bottom-section" id="settings-section">
+                    <div class="section-header">
+                        <i class="bi bi-gear"></i>
+                        <span>Settings</span>
+                    </div>
+
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <label for="confidence-slider">
+                                <span>Confidence Threshold</span>
+                                <span class="setting-value" id="confidence-value">0.40</span>
+                            </label>
+                            <input type="range" class="range-slider" id="confidence-slider"
+                                   min="0.1" max="0.95" step="0.05" value="0.40">
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="iou-slider">
+                                <span>IOU Threshold</span>
+                                <span class="setting-value" id="iou-value">0.45</span>
+                            </label>
+                            <input type="range" class="range-slider" id="iou-slider"
+                                   min="0.1" max="0.9" step="0.05" value="0.45">
+                        </div>
+
+                        <div class="setting-item setting-actions">
+                            <div class="theme-toggle" id="theme-toggle">
+                                <i class="bi bi-moon-stars"></i>
+                                <span>Dark Mode</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="theme-checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <button class="btn-secondary-custom" id="btn-reset-settings">
+                                <i class="bi bi-arrow-counterclockwise"></i> Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Keyboard Shortcuts -->
+                <div class="bottom-section shortcuts-section" id="shortcuts-section">
+                    <div class="section-header">
+                        <i class="bi bi-keyboard"></i>
+                        <span>Shortcuts</span>
+                    </div>
+                    <div class="shortcuts-grid">
+                        <div class="shortcut"><kbd>P</kbd> Play</div>
+                        <div class="shortcut"><kbd>Space</kbd> Pause</div>
+                        <div class="shortcut"><kbd>R</kbd> Resume</div>
+                        <div class="shortcut"><kbd>S</kbd> Stop</div>
+                        <div class="shortcut"><kbd>F</kbd> Fullscreen</div>
+                        <div class="shortcut"><kbd>C</kbd> Screenshot</div>
+                        <div class="shortcut"><kbd>D</kbd> Download</div>
+                        <div class="shortcut"><kbd>E</kbd> Export CSV</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Scripts (local — no CDN required) -->
+    <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/socket.io/socket.io.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
